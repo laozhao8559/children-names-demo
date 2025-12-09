@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>步骤跳转调试</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🔧 步骤跳转调试</h1>
+            <p>专门测试页面跳转功能</p>
+        </header>
+
+        <main class="main-content">
+            <!-- 步骤1 -->
+            <div id="step1" class="step-content active">
+                <h2>步骤1：测试表单</h2>
+                <form id="testForm">
+                    <div class="form-group">
+                        <label for="theme">选择主题:</label>
+                        <select id="theme" name="theme" required>
+                            <option value="">请选择主题...</option>
+                            <option value="公交站">公交站</option>
+                            <option value="博物馆">博物馆</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="title">标题:</label>
+                        <input type="text" id="title" name="title" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">提交并跳转</button>
+                    <button type="button" class="btn btn-secondary" onclick="testManualJump()">手动测试跳转</button>
+                </form>
+            </div>
+
+            <!-- 步骤2 -->
+            <div id="step2" class="step-content">
+                <h2>步骤2：结果页面</h2>
+                <div id="resultContainer">
+                    <p>如果看到这个页面，说明跳转成功！</p>
+                </div>
+                <button class="btn btn-secondary" onclick="testGoBack()">返回步骤1</button>
+            </div>
+        </main>
+
+        <!-- 调试信息 -->
+        <div style="margin-top: 30px; padding: 20px; background: #f0f0f0; border-radius: 8px;">
+            <h3>🐛 调试信息</h3>
+            <div id="debugInfo">等待调试...</div>
+        </div>
+    </div>
+
+    <script src="vocabulary.js"></script>
+    <script>
+        let debugLog = [];
+
+        function addDebugLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            debugLog.push(`[${timestamp}] ${message}`);
+            updateDebugDisplay();
+            console.log(message);
+        }
+
+        function updateDebugDisplay() {
+            const container = document.getElementById('debugInfo');
+            if (container) {
+                container.innerHTML = debugLog.map(log => `<div>${log}</div>`).join('');
+            }
+        }
+
+        // 增强版的 goToStep 函数，包含详细调试
+        function goToStep(step) {
+            addDebugLog(`=== 开始跳转到步骤 ${step} ===`);
+
+            // 检查当前所有步骤的状态
+            document.querySelectorAll('.step-content').forEach((el, index) => {
+                const stepNum = index + 1;
+                const isActive = el.classList.contains('active');
+                addDebugLog(`步骤${stepNum} (${el.id}): active=${isActive}, display=${window.getComputedStyle(el).display}`);
+            });
+
+            // 隐藏所有步骤
+            addDebugLog('开始隐藏所有步骤...');
+            document.querySelectorAll('.step-content').forEach(el => {
+                el.classList.remove('active');
+                addDebugLog(`移除 ${el.id} 的 active 类`);
+            });
+
+            // 显示目标步骤
+            addDebugLog(`准备显示步骤 ${step}`);
+            const targetElement = document.getElementById(`step${step}`);
+            if (targetElement) {
+                targetElement.classList.add('active');
+                addDebugLog(`已给 ${targetElement.id} 添加 active 类`);
+
+                // 强制检查样式
+                setTimeout(() => {
+                    const computedStyle = window.getComputedStyle(targetElement);
+                    addDebugLog(`步骤${step} 最终状态: display=${computedStyle.display}, visibility=${computedStyle.visibility}`);
+
+                    // 检查元素是否真的可见
+                    const rect = targetElement.getBoundingClientRect();
+                    addDebugLog(`步骤${step} 位置信息: top=${rect.top}, height=${rect.height}, visible=${rect.height > 0}`);
+                }, 100);
+
+            } else {
+                addDebugLog(`❌ 错误：未找到步骤${step}元素`);
+            }
+
+            // 更新步骤指示器
+            addDebugLog('更新步骤指示器...');
+            document.querySelectorAll('.step').forEach(el => {
+                el.classList.remove('active', 'completed');
+            });
+
+            for (let i = 1; i <= step; i++) {
+                const indicator = document.querySelector(`.step[data-step="${i}"]`);
+                if (indicator) {
+                    if (i < step) {
+                        indicator.classList.add('completed');
+                    } else if (i === step) {
+                        indicator.classList.add('active');
+                    }
+                }
+            }
+
+            addDebugLog(`=== 步骤${step}跳转完成 ===`);
+        }
+
+        // 手动测试跳转
+        function testManualJump() {
+            addDebugLog('用户点击手动测试跳转按钮');
+            goToStep(2);
+        }
+
+        // 测试返回
+        function testGoBack() {
+            addDebugLog('用户点击返回按钮');
+            goToStep(1);
+        }
+
+        // 表单提交处理
+        document.addEventListener('DOMContentLoaded', function() {
+            addDebugLog('DOM加载完成');
+
+            const form = document.getElementById('testForm');
+            if (form) {
+                addDebugLog('找到表单，绑定提交事件');
+                form.addEventListener('submit', function(e) {
+                    addDebugLog('表单提交事件触发');
+                    e.preventDefault();
+
+                    // 验证表单
+                    const formData = new FormData(e.target);
+                    const theme = formData.get('theme');
+                    const title = formData.get('title');
+
+                    if (!theme || !title) {
+                        alert('请填写所有字段');
+                        return;
+                    }
+
+                    addDebugLog(`表单验证通过: theme=${theme}, title=${title}`);
+
+                    // 模拟处理
+                    setTimeout(() => {
+                        addDebugLog('开始跳转到步骤2');
+                        goToStep(2);
+
+                        // 更新结果内容
+                        const resultContainer = document.getElementById('resultContainer');
+                        if (resultContainer) {
+                            resultContainer.innerHTML = `
+                                <div class="result-section">
+                                    <h3>✅ 跳转成功！</h3>
+                                    <p><strong>主题:</strong> ${theme}</p>
+                                    <p><strong>标题:</strong> ${title}</p>
+                                    <p><strong>跳转时间:</strong> ${new Date().toLocaleString()}</p>
+                                </div>
+                            `;
+                        }
+                    }, 500);
+                });
+            } else {
+                addDebugLog('❌ 错误：未找到表单元素');
+            }
+
+            addDebugLog('初始化完成');
+        });
+
+        // 定期检查步骤状态
+        setInterval(() => {
+            const step1 = document.getElementById('step1');
+            const step2 = document.getElementById('step2');
+
+            if (step1 && step2) {
+                const step1Active = step1.classList.contains('active');
+                const step2Active = step2.classList.contains('active');
+
+                if (!debugLog.includes('步骤状态检查')) {
+                    addDebugLog(`当前状态: 步骤1=${step1Active}, 步骤2=${step2Active}`);
+                }
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

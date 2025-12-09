@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>儿童识字小报生成器</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* 修复样式冲突 */
+        @media print {
+            .step-content {
+                display: block !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🎨 儿童识字小报生成器</h1>
+            <p>根据主题/场景自动生成儿童识字小报绘图Prompt</p>
+            <div class="header-buttons">
+                <button class="btn btn-secondary" onclick="showHistory()">📚 历史记录</button>
+                <button class="btn btn-info" onclick="clearAllHistory()">🗑️ 清空历史</button>
+            </div>
+        </header>
+
+        <!-- 步骤指示器 -->
+        <div class="steps-indicator">
+            <div class="step active" data-step="1">
+                <span class="step-number">1</span>
+                <span class="step-title">收集信息</span>
+            </div>
+            <div class="step" data-step="2">
+                <span class="step-number">2</span>
+                <span class="step-title">生成词汇</span>
+            </div>
+            <div class="step" data-step="3">
+                <span class="step-number">3</span>
+                <span class="step-title">创建标签</span>
+            </div>
+            <div class="step" data-step="4">
+                <span class="step-number">4</span>
+                <span class="step-title">生成Prompt</span>
+            </div>
+            <div class="step" data-step="5">
+                <span class="step-number">5</span>
+                <span class="step-title">完成</span>
+            </div>
+        </div>
+
+        <!-- 主要内容区 -->
+        <main class="main-content">
+            <!-- 步骤1: 5个问题 -->
+            <div id="step1" class="step-content active">
+                <h2>📋 请回答以下5个问题</h2>
+                <form id="questionsForm">
+                    <div class="form-group">
+                        <label for="theme">1. 本期儿童识字小报的主题/场景是什么？</label>
+                        <div style="margin-bottom: 10px;">
+                            <select id="theme" name="theme" required onchange="handleThemeChange()">
+                                <option value="">请选择主题...</option>
+                                <optgroup label="日常生活场景">
+                                    <option value="超市">超市</option>
+                                    <option value="家里">家里</option>
+                                    <option value="学校">学校</option>
+                                    <option value="医院">医院</option>
+                                </optgroup>
+                                <optgroup label="户外活动场景">
+                                    <option value="公园">公园</option>
+                                    <option value="游乐场">游乐场</option>
+                                    <option value="动物园">动物园</option>
+                                </optgroup>
+                                <optgroup label="交通场景">
+                                    <option value="公交站">公交站</option>
+                                    <option value="火车站">火车站</option>
+                                    <option value="飞机场">飞机场</option>
+                                </optgroup>
+                                <optgroup label="文化教育场景">
+                                    <option value="图书馆">图书馆</option>
+                                    <option value="博物馆">博物馆</option>
+                                    <option value="书店">书店</option>
+                                </optgroup>
+                                <optgroup label="其他场景">
+                                    <option value="custom">自定义输入</option>
+                                </optgroup>
+                            </select>
+                        </div>
+
+                        <!-- 自定义输入框 -->
+                        <div id="customThemeDiv" style="display: none;">
+                            <input type="text" id="customTheme" name="customTheme"
+                                   placeholder="请输入您的自定义场景..."
+                                   style="width: 100%; padding: 12px 15px; border: 2px solid #4CAF50; border-radius: 8px; font-size: 16px;">
+                            <small>例如：菜市场、面包店、花店、邮局、银行等</small>
+                        </div>
+
+                        <small>支持13个场景，或自定义输入任何您想要的场景</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="title">2. 小报的大标题是什么？</label>
+                        <input type="text" id="title" name="title" placeholder="如：《走进超市》《快乐医院》《森林大冒险》" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>3. 你希望标签显示哪些语言？（可任意组合）</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="languages" value="chinese" checked>
+                                <span>中文</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="languages" value="pinyin">
+                                <span>拼音</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="languages" value="english">
+                                <span>英文</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="languages" value="japanese">
+                                <span>日文</span>
+                            </label>
+                        </div>
+                        <small>支持任意组合：中文、中文+拼音、中文+英文、全选等</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="difficulty">4. 你希望本期词汇难度等级是？</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="difficulty" value="level1" checked>
+                                <div class="radio-content">
+                                    <strong>Level 1：</strong>日常常见（适合 5–6 岁）
+                                </div>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="difficulty" value="level2">
+                                <div class="radio-content">
+                                    <strong>Level 2：</strong>场景完整词汇（适合 6–8 岁）
+                                </div>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="difficulty" value="level3">
+                                <div class="radio-content">
+                                    <strong>Level 3：</strong>细节丰富、难度较高（适合 8–9 岁）
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="environment">5. 画面需要体现季节、天气或地理特征吗？</label>
+                        <select id="environment" name="environment">
+                            <option value="">无特别要求</option>
+                            <optgroup label="季节">
+                                <option value="春季">春季</option>
+                                <option value="夏季">夏季</option>
+                                <option value="秋季">秋季</option>
+                                <option value="冬季">冬季</option>
+                            </optgroup>
+                            <optgroup label="天气">
+                                <option value="晴天">晴天</option>
+                                <option value="雨天">雨天</option>
+                                <option value="阴天">阴天</option>
+                                <option value="雪天">雪天</option>
+                                <option value="雾天">雾天</option>
+                            </optgroup>
+                            <optgroup label="地理">
+                                <option value="森林">森林</option>
+                                <option value="城市">城市</option>
+                                <option value="乡村">乡村</option>
+                                <option value="山地">山地</option>
+                                <option value="海边">海边</option>
+                            </optgroup>
+                        </select>
+                        <input type="text" id="customEnvironment" placeholder="或输入自定义描述" style="margin-top: 10px;">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">下一步：生成词汇</button>
+                </form>
+            </div>
+
+            <!-- 步骤2: 显示生成的词汇 -->
+            <div id="step2" class="step-content">
+                <h2>📚 自动生成的词汇库</h2>
+                <div id="vocabularyList" class="vocabulary-list">
+                    <p>正在生成词汇...</p>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="previousStep()">上一步</button>
+                    <button class="btn btn-primary" onclick="nextStep()">下一步：生成标签</button>
+                </div>
+            </div>
+
+            <!-- 步骤3: 显示标签组合 -->
+            <div id="step3" class="step-content">
+                <h2>🏷️ 标签组合结果</h2>
+                <div id="tagList" class="tag-list">
+                    <p>正在生成标签...</p>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="previousStep()">上一步</button>
+                    <button class="btn btn-primary" onclick="nextStep()">下一步：生成Prompt</button>
+                </div>
+            </div>
+
+            <!-- 步骤4: 生成Prompt -->
+            <div id="step4" class="step-content">
+                <h2>🎯 绘图Prompt生成</h2>
+                <div id="promptResult" class="prompt-result">
+                    <p>正在生成绘图Prompt...</p>
+                </div>
+                <div class="api-section">
+                    <h3>API配置</h3>
+                    <div class="form-group">
+                        <label for="apiKey">API Key:</label>
+                        <input type="password" id="apiKey" placeholder="请输入您的Nano Banana Pro API Key">
+                        <small>获取API Key: <a href="https://kie.ai/api-key" target="_blank">https://kie.ai/api-key</a></small>
+                    </div>
+                    <button class="btn btn-success" onclick="generateImage()">生成图像</button>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="previousStep()">上一步</button>
+                </div>
+            </div>
+
+            <!-- 步骤5: 完成 -->
+            <div id="step5" class="step-content">
+                <h2>🎉 生成完成！</h2>
+                <div id="finalResult" class="final-result">
+                    <div class="result-section">
+                        <h3>📸 生成的图像</h3>
+                        <div id="generatedImage" class="image-container">
+                            <p>图像生成中...</p>
+                        </div>
+                    </div>
+
+                    <div class="result-section">
+                        <h3>📝 词汇总表</h3>
+                        <div id="vocabularyTable" class="vocabulary-table"></div>
+                    </div>
+
+                    <div class="result-section">
+                        <h3>💾 下载</h3>
+                        <div class="download-buttons">
+                            <button class="btn btn-primary" onclick="downloadImage()">下载图像</button>
+                            <button class="btn btn-secondary" onclick="copyPrompt()">复制Prompt</button>
+                            <button class="btn btn-info" onclick="exportData()">导出数据</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="restart()">重新开始</button>
+                </div>
+            </div>
+        </main>
+
+        <!-- 加载提示 -->
+        <div id="loadingOverlay" class="loading-overlay hidden">
+            <div class="loading-spinner"></div>
+            <p id="loadingText">处理中...</p>
+        </div>
+
+        <!-- 历史记录弹窗 -->
+        <div id="historyModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>📚 生成历史记录</h2>
+                    <button class="close-btn" onclick="closeHistory()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="historyList" class="history-list">
+                        <p class="no-history">暂无历史记录</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeHistory()">关闭</button>
+                    <button class="btn btn-primary" onclick="exportHistory()">导出历史</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="vocabulary.js"></script>
+    <script>
+        // 终极修复版本 - 完全重写确保稳定性
+        let currentStep = 1;
+        let userData = {};
+        let vocabulary = [];
+        let tags = [];
+        let finalPrompt = '';
+
+        // 页面加载完成后立即初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 页面加载完成，开始初始化');
+            setTimeout(initializeApp, 100); // 稍微延迟确保所有资源加载完成
+        });
+
+        function initializeApp() {
+            console.log('🔧 初始化应用');
+
+            try {
+                // 绑定表单提交事件
+                const form = document.getElementById('questionsForm');
+                if (form) {
+                    console.log('✅ 找到表单，绑定提交事件');
+                    form.addEventListener('submit', handleFormSubmit);
+                } else {
+                    console.error('❌ 未找到表单元素');
+                    alert('页面加载失败，请刷新页面重试！');
+                    return;
+                }
+
+                // 绑定环境选择变化事件
+                const environmentSelect = document.getElementById('environment');
+                const customInput = document.getElementById('customEnvironment');
+
+                if (environmentSelect && customInput) {
+                    environmentSelect.addEventListener('change', function() {
+                        if (this.value) {
+                            customInput.style.display = 'none';
+                            customInput.value = '';
+                        } else {
+                            customInput.style.display = 'block';
+                        }
+                    });
+                }
+
+                console.log('✅ 初始化完成');
+            } catch (error) {
+                console.error('❌ 初始化失败:', error);
+                alert('初始化失败：' + error.message);
+            }
+        }
+
+        // 主题变化处理
+        function handleThemeChange() {
+            console.log('🔄 主题变化处理');
+            const themeSelect = document.getElementById('theme');
+            const customDiv = document.getElementById('customThemeDiv');
+            const customInput = document.getElementById('customTheme');
+
+            if (themeSelect.value === 'custom') {
+                customDiv.style.display = 'block';
+                customInput.required = true;
+            } else {
+                customDiv.style.display = 'none';
+                customInput.required = false;
+                customInput.value = '';
+            }
+        }
+
+        // 处理表单提交
+        function handleFormSubmit(e) {
+            console.log('📋 表单提交开始');
+            e.preventDefault();
+
+            // 收集用户数据
+            const formData = new FormData(e.target);
+            const themeValue = formData.get('theme');
+            const customTheme = formData.get('customTheme');
+
+            userData = {
+                theme: themeValue === 'custom' ? customTheme : themeValue,
+                title: formData.get('title'),
+                languages: formData.getAll('languages'),
+                difficulty: formData.get('difficulty'),
+                environment: formData.get('environment') || document.getElementById('customEnvironment').value
+            };
+
+            console.log('📊 收集到的数据:', userData);
+
+            // 验证必填字段
+            if (!userData.theme || userData.theme === '') {
+                alert('请选择主题！');
+                return;
+            }
+
+            if (!userData.title || userData.title === '') {
+                alert('请填写标题！');
+                return;
+            }
+
+            if (!userData.languages || userData.languages.length === 0) {
+                alert('请选择至少一种语言！');
+                return;
+            }
+
+            if (!userData.difficulty || userData.difficulty === '') {
+                alert('请选择难度等级！');
+                return;
+            }
+
+            console.log('✅ 验证通过，开始生成词汇');
+
+            // 生成词汇
+            generateVocabulary();
+        }
+
+        // 生成词汇
+        function generateVocabulary() {
+            console.log('📚 开始生成词汇');
+
+            try {
+                showLoading('正在生成词汇库...');
+
+                // 立即获取词汇
+                vocabulary = getVocabulary(userData.theme, userData.difficulty);
+                console.log('✅ 成功获取词汇，数量:', vocabulary.length);
+
+                // 显示词汇
+                displayVocabulary();
+
+                // 隐藏加载提示
+                hideLoading();
+
+                // 保存到历史记录
+                saveToHistory();
+
+                // 确保跳转到步骤2
+                console.log('🚀 准备跳转到步骤2');
+                setTimeout(() => {
+                    goToStep(2);
+                    console.log('✅ 跳转完成');
+                }, 300);
+
+            } catch (error) {
+                console.error('❌ 生成词汇时出错:', error);
+                hideLoading();
+                alert('生成词汇时出错：' + error.message);
+            }
+        }
+
+        // 显示词汇
+        function displayVocabulary() {
+            const container = document.getElementById('vocabularyList');
+            if (!container) {
+                console.error('❌ 未找到词汇列表容器');
+                return;
+            }
+
+            let html = '<div class="vocabulary-grid">';
+
+            vocabulary.forEach((word, index) => {
+                html += `
+                    <div class="vocabulary-item">
+                        <strong>${index + 1}. ${word.chinese}</strong><br>
+                        <small>${word.pinyin}</small><br>
+                        <small>${word.english}</small>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+
+            html += `
+                <div class="vocabulary-summary">
+                    <h4>词汇信息</h4>
+                    <p><strong>主题：</strong>${userData.theme}</p>
+                    <p><strong>难度：</strong>${getDifficultyDescription()}</p>
+                    <p><strong>词汇数量：</strong>${vocabulary.length} 个</p>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // 获取难度描述
+        function getDifficultyDescription() {
+            const difficultyMap = {
+                'level1': 'Level 1：日常常见（适合 5–6 岁）',
+                'level2': 'Level 2：场景完整词汇（适合 6–8 岁）',
+                'level3': 'Level 3：细节丰富、难度较高（适合 8–9 岁）'
+            };
+            return difficultyMap[userData.difficulty] || userData.difficulty;
+        }
+
+        // 生成标签
+        function generateTags() {
+            console.log('🏷️ 开始生成标签');
+
+            try {
+                showLoading('正在生成标签...');
+
+                tags = generateTagText(vocabulary, userData.languages);
+                console.log('✅ 生成标签成功:', tags.length);
+
+                displayTags();
+                hideLoading();
+
+            } catch (error) {
+                console.error('❌ 生成标签时出错:', error);
+                hideLoading();
+                alert('生成标签时出错：' + error.message);
+            }
+        }
+
+        // 显示标签
+        function displayTags() {
+            const container = document.getElementById('tagList');
+            if (!container) {
+                console.error('❌ 未找到标签列表容器');
+                return;
+            }
+
+            let html = '<div class="tag-grid">';
+
+            tags.forEach((tag, index) => {
+                html += `
+                    <div class="tag-item">
+                        <span class="tag-number">${index + 1}</span>
+                        <span class="tag-text">${tag}</span>
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+
+            html += `
+                <div class="tag-summary">
+                    <h4>标签配置</h4>
+                    <ul>
+                        <li><strong>主题：</strong>${userData.theme}</li>
+                        <li><strong>标题：</strong>${userData.title}</li>
+                        <li><strong>语言组合：</strong>${getLanguageDescription()}</li>
+                        <li><strong>标签数量：</strong>${tags.length} 个</li>
+                    </ul>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // 获取语言描述
+        function getLanguageDescription() {
+            const languageMap = {
+                'chinese': '中文',
+                'pinyin': '拼音',
+                'english': '英文',
+                'japanese': '日文'
+            };
+
+            return userData.languages.map(lang => languageMap[lang]).join(' + ');
+        }
+
+        // 生成Prompt
+        function generatePrompt() {
+            console.log('🎯 开始生成Prompt');
+
+            try {
+                showLoading('正在生成绘图Prompt...');
+
+                finalPrompt = createImagePrompt();
+                displayPrompt();
+                hideLoading();
+
+            } catch (error) {
+                console.error('❌ 生成Prompt时出错:', error);
+                hideLoading();
+                alert('生成Prompt时出错：' + error.message);
+            }
+        }
+
+        // 创建图像Prompt
+        function createImagePrompt() {
+            const sceneDescription = generateSceneDescription();
+            const characterDescription = getCharactersByTheme(userData.theme);
+
+            return `儿童识字小报插图：${userData.title}
+
+场景描述：${sceneDescription}
+
+画面要求：
+- 风格：温馨可爱的儿童插画风格
+- 色彩：明亮鲜艳，适合儿童观看
+- 构图：清晰展示所有词汇对应的物品
+- 人物：包含${characterDescription}
+- 环境：${userData.environment ? userData.environment + '环境' : '明亮干净的室内环境'}
+
+词汇标签要求：
+每个物品旁边都必须包含以下语言的标签：${getLanguageDescription()}
+标注格式要求：${generateTagFormatExample()}
+所有词汇必须同时包含所有选择的语言，不得遗漏！
+
+具体标注示例：
+${generateDetailedTagExamples()}
+
+需要包含的词汇（${vocabulary.length}个）：
+${vocabulary.map((item, index) => `${index + 1}. ${item.chinese}`).join('\n')}
+
+画面风格：
+- 适合5-9岁儿童的认知水平
+- 线条简洁，色彩明快
+- 教育性强，便于识字学习
+- 整体布局清晰有序`;
+        }
+
+        // 生成场景描述
+        function generateSceneDescription() {
+            const sceneMap = {
+                '超市': '繁忙的超市内部，有整齐排列的货架、明亮的灯光和购物的家庭',
+                '家里': '温馨的家庭客厅，有舒适的家具和家庭成员',
+                '学校': '明亮的教室，有课桌椅、黑板和学习的学生',
+                '医院': '干净的医院环境，有医生、护士和医疗设备',
+                '公园': '绿色的公园环境，有树木、花草和休闲的人们',
+                '游乐场': '欢乐的游乐场，有各种游乐设施和快乐的孩子们',
+                '动物园': '生动的动物园，有各种动物和参观的游客',
+                '公交站': '城市公交站，有候车亭、站牌和等车的乘客',
+                '火车站': '繁忙的火车站，有站台、列车和旅客',
+                '飞机场': '现代化的机场，有候机厅、飞机和旅客',
+                '图书馆': '安静的图书馆，有书架、桌椅和阅读的人们',
+                '博物馆': '庄重的博物馆，有展品、说明牌和参观者',
+                '书店': '温馨的书店，有书架、桌椅和购书读者'
+            };
+
+            const baseDescription = sceneMap[userData.theme] || `一个关于${userData.theme}的场景，包含相关的物品和人物`;
+
+            if (userData.environment) {
+                return `${baseDescription}，体现${userData.environment}的特色。`;
+            }
+
+            return baseDescription + '。';
+        }
+
+        // 获取人物描述
+        function getCharactersByTheme(theme) {
+            const characterMap = {
+                '超市': '购物家庭、收银员、理货员',
+                '家里': '家庭成员（父母、孩子）',
+                '学校': '学生、老师',
+                '医院': '医生、护士、病人',
+                '公园': '游客、孩子、老人',
+                '游乐场': '小朋友、家长、工作人员',
+                '动物园': '游客、饲养员、孩子',
+                '公交站': '乘客、司机、学生',
+                '火车站': '旅客、乘务员、工作人员',
+                '飞机场': '旅客、空乘人员、地勤人员',
+                '图书馆': '读者、图书管理员、学生',
+                '博物馆': '参观者、讲解员、保安',
+                '书店': '读者、店员、学生'
+            };
+
+            return characterMap[theme] || '相关的人物和角色';
+        }
+
+        // 生成标签格式示例
+        function generateTagFormatExample() {
+            const formatMap = {
+                'chinese': '中文',
+                'chinese,english': '中文 (english)',
+                'chinese,pinyin': '中文 [pinyin]',
+                'chinese,pinyin,english': '中文 [pinyin] (english)',
+                'chinese,pinyin,english,japanese': '中文 [pinyin] (english) {japanese}'
+            };
+
+            const key = userData.languages.sort().join(',');
+            return formatMap[key] || '中文';
+        }
+
+        // 生成详细的标注示例
+        function generateDetailedTagExamples() {
+            if (!vocabulary || vocabulary.length === 0) {
+                return '暂无词汇示例';
+            }
+
+            const exampleWords = vocabulary.slice(0, 3); // 取前3个词汇作为示例
+            let examples = '';
+
+            exampleWords.forEach((word, index) => {
+                let tagParts = [];
+
+                if (userData.languages.includes('chinese')) {
+                    tagParts.push(word.chinese);
+                }
+                if (userData.languages.includes('pinyin')) {
+                    tagParts.push(`[${word.pinyin}]`);
+                }
+                if (userData.languages.includes('english')) {
+                    tagParts.push(`(${word.english})`);
+                }
+                if (userData.languages.includes('japanese')) {
+                    tagParts.push(`{${word.japanese}}`);
+                }
+
+                examples += `- ${word.chinese}: ${tagParts.join(' ')}\n`;
+            });
+
+            return examples;
+        }
+
+        // 显示Prompt
+        function displayPrompt() {
+            const container = document.getElementById('promptResult');
+            if (!container) {
+                console.error('❌ 未找到Prompt结果容器');
+                return;
+            }
+
+            const html = `
+                <div class="prompt-content">
+                    <h3>生成的绘图Prompt</h3>
+                    <pre>${finalPrompt}</pre>
+                </div>
+                <div class="prompt-actions">
+                    <button class="btn btn-secondary" onclick="copyPrompt()">复制Prompt</button>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // 跳转到指定步骤 - 终极修复版
+        function goToStep(step) {
+            console.log(`🎯 跳转到步骤 ${step}`);
+
+            // 隐藏所有步骤内容
+            document.querySelectorAll('.step-content').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            // 显示目标步骤
+            const targetElement = document.getElementById(`step${step}`);
+            if (targetElement) {
+                targetElement.classList.add('active');
+                console.log(`✅ 成功显示步骤 ${step}`);
+                currentStep = step;
+
+                // 强制滚动到顶部
+                window.scrollTo(0, 0);
+
+                // 验证跳转是否成功
+                setTimeout(() => {
+                    const isVisible = targetElement.classList.contains('active') &&
+                                   window.getComputedStyle(targetElement).display !== 'none';
+                    if (isVisible) {
+                        console.log(`✅ 步骤 ${step} 显示验证成功`);
+                    } else {
+                        console.error(`❌ 步骤 ${step} 显示验证失败`);
+                    }
+                }, 100);
+
+            } else {
+                console.error(`❌ 未找到步骤 ${step} 的元素`);
+                return;
+            }
+
+            // 更新步骤指示器
+            document.querySelectorAll('.step').forEach(el => {
+                el.classList.remove('active');
+                el.classList.remove('completed');
+            });
+
+            for (let i = 1; i <= step; i++) {
+                const stepIndicator = document.querySelector(`.step[data-step="${i}"]`);
+                if (stepIndicator) {
+                    if (i < step) {
+                        stepIndicator.classList.add('completed');
+                    } else if (i === step) {
+                        stepIndicator.classList.add('active');
+                    }
+                }
+            }
+
+            console.log(`✅ 步骤 ${step} 跳转处理完成`);
+        }
+
+        // 上一步
+        function previousStep() {
+            console.log('⬅️ 上一步');
+            if (currentStep > 1) {
+                goToStep(currentStep - 1);
+            }
+        }
+
+        // 下一步
+        function nextStep() {
+            console.log('➡️ 下一步，当前步骤:', currentStep);
+
+            switch (currentStep) {
+                case 2:
+                    generateTags();
+                    goToStep(3);
+                    break;
+                case 3:
+                    generatePrompt();
+                    goToStep(4);
+                    break;
+                case 4:
+                    goToStep(5);
+                    break;
+            }
+        }
+
+        // 重新开始
+        function restart() {
+            console.log('🔄 重新开始');
+            currentStep = 1;
+            userData = {};
+            vocabulary = [];
+            tags = [];
+            finalPrompt = '';
+
+            // 重置表单
+            const form = document.getElementById('questionsForm');
+            if (form) {
+                form.reset();
+            }
+
+            goToStep(1);
+        }
+
+        // 显示加载提示
+        function showLoading(text) {
+            const overlay = document.getElementById('loadingOverlay');
+            const loadingText = document.getElementById('loadingText');
+
+            if (overlay && loadingText) {
+                loadingText.textContent = text;
+                overlay.classList.remove('hidden');
+            }
+        }
+
+        // 隐藏加载提示
+        function hideLoading() {
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.classList.add('hidden');
+            }
+        }
+
+        // 历史记录管理
+        function saveToHistory() {
+            try {
+                const history = JSON.parse(localStorage.getItem('xiaozibao_history') || '[]');
+
+                const record = {
+                    id: Date.now(),
+                    timestamp: new Date().toLocaleString(),
+                    theme: userData.theme,
+                    title: userData.title,
+                    languages: userData.languages,
+                    difficulty: userData.difficulty,
+                    environment: userData.environment,
+                    vocabularyCount: vocabulary.length,
+                    prompt: finalPrompt
+                };
+
+                history.unshift(record);
+
+                // 只保留最近20条记录
+                if (history.length > 20) {
+                    history.splice(20);
+                }
+
+                localStorage.setItem('xiaozibao_history', JSON.stringify(history));
+                console.log('💾 历史记录保存成功');
+            } catch (error) {
+                console.error('❌ 保存历史记录失败:', error);
+            }
+        }
+
+        // 显示历史记录
+        function showHistory() {
+            const history = JSON.parse(localStorage.getItem('xiaozibao_history') || '[]');
+            const modal = document.getElementById('historyModal');
+            const list = document.getElementById('historyList');
+
+            if (!modal || !list) return;
+
+            if (history.length === 0) {
+                list.innerHTML = '<p class="no-history">暂无历史记录</p>';
+            } else {
+                let html = '';
+                history.forEach(record => {
+                    html += `
+                        <div class="history-item">
+                            <div class="history-item-header">
+                                <span class="history-item-title">${record.title}</span>
+                                <span class="history-item-time">${record.timestamp}</span>
+                            </div>
+                            <div class="history-item-details">
+                                <div class="history-item-detail">主题：${record.theme}</div>
+                                <div class="history-item-detail">语言：${record.languages.join(', ')}</div>
+                                <div class="history-item-detail">词汇数：${record.vocabularyCount}</div>
+                            </div>
+                            <div class="history-item-actions">
+                                <button class="btn btn-secondary" onclick="loadHistoryItem(${record.id})">加载</button>
+                                <button class="btn btn-info" onclick="copyHistoryPrompt(${record.id})">复制Prompt</button>
+                            </div>
+                        </div>
+                    `;
+                });
+                list.innerHTML = html;
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        // 关闭历史记录
+        function closeHistory() {
+            const modal = document.getElementById('historyModal');
+            if (modal) {
+                modal.classList.add('hidden');
+            }
+        }
+
+        // 清空历史记录
+        function clearAllHistory() {
+            if (confirm('确定要清空所有历史记录吗？此操作不可恢复。')) {
+                localStorage.removeItem('xiaozibao_history');
+                alert('历史记录已清空');
+            }
+        }
+
+        // 导出历史记录
+        function exportHistory() {
+            const history = JSON.parse(localStorage.getItem('xiaozibao_history') || '[]');
+
+            if (history.length === 0) {
+                alert('没有历史记录可以导出');
+                return;
+            }
+
+            const dataStr = JSON.stringify(history, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+
+            const exportFileDefaultName = `xiaozibao_history_${new Date().toISOString().split('T')[0]}.json`;
+
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
+
+        // 占位函数
+        function generateImage() {
+            alert('图像生成功能需要配置API Key');
+        }
+
+        function downloadImage() {
+            alert('请先生成图像');
+        }
+
+        function copyPrompt() {
+            if (!finalPrompt) {
+                alert('请先生成Prompt');
+                return;
+            }
+
+            navigator.clipboard.writeText(finalPrompt).then(() => {
+                alert('Prompt已复制到剪贴板！');
+            }).catch(err => {
+                console.error('复制失败:', err);
+                alert('复制失败，请手动复制');
+            });
+        }
+
+        function exportData() {
+            if (!userData || !vocabulary || !tags) {
+                alert('没有可导出的数据');
+                return;
+            }
+
+            const exportData = {
+                userData: userData,
+                vocabulary: vocabulary,
+                tags: tags,
+                prompt: finalPrompt,
+                exportTime: new Date().toISOString()
+            };
+
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+
+            const exportFileDefaultName = `xiaozibao_${userData.title}_${Date.now()}.json`;
+
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
+
+        function loadHistoryItem(id) {
+            alert('历史记录加载功能开发中...');
+        }
+
+        function copyHistoryPrompt(id) {
+            alert('历史记录Prompt复制功能开发中...');
+        }
+
+        console.log('🎉 终极修复版本加载完成');
+    </script>
+</body>
+</html>
