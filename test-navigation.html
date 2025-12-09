@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>导航问题诊断</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🔧 导航问题诊断</h1>
+            <p>检查JavaScript函数是否正常工作</p>
+        </header>
+
+        <main class="main-content">
+            <div class="step-content active">
+                <h2>🧪 功能测试</h2>
+
+                <div class="form-group">
+                    <label>测试场景:</label>
+                    <select id="testTheme">
+                        <option value="公交站">公交站</option>
+                        <option value="博物馆">博物馆</option>
+                        <option value="超市">超市</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>测试标题:</label>
+                    <input type="text" id="testTitle" value="测试标题">
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="testStepNavigation()">测试步骤跳转</button>
+                    <button class="btn btn-secondary" onclick="testVocabularyGeneration()">测试词汇生成</button>
+                    <button class="btn btn-info" onclick="testFunctionsExistence()">测试函数存在性</button>
+                </div>
+
+                <div id="testResults" style="margin-top: 30px; display: none;">
+                    <h3>📋 测试结果</h3>
+                    <div id="resultsContainer"></div>
+                </div>
+            </div>
+
+            <!-- 步骤2 (隐藏) -->
+            <div id="step2" class="step-content">
+                <h2>📚 词汇显示测试</h2>
+                <div id="vocabularyList">
+                    <p>这里是步骤2的内容</p>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="goBackToStep1()">返回步骤1</button>
+                </div>
+            </div>
+        </main>
+
+        <!-- 步骤指示器 -->
+        <div class="steps-indicator">
+            <div class="step active" data-step="1">
+                <span class="step-number">1</span>
+                <span class="step-title">测试</span>
+            </div>
+            <div class="step" data-step="2">
+                <span class="step-number">2</span>
+                <span class="step-title">词汇</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="vocabulary.js"></script>
+    <script>
+        let userData = {};
+        let vocabulary = [];
+
+        // 测试函数存在性
+        function testFunctionsExistence() {
+            const results = [];
+
+            results.push({
+                test: 'getVocabulary函数存在',
+                status: typeof getVocabulary !== 'undefined',
+                detail: typeof getVocabulary !== 'undefined' ? '✅ 存在' : '❌ 不存在'
+            });
+
+            results.push({
+                test: 'generateTagText函数存在',
+                status: typeof generateTagText !== 'undefined',
+                detail: typeof generateTagText !== 'undefined' ? '✅ 存在' : '❌ 不存在'
+            });
+
+            results.push({
+                test: 'document.getElementById可用',
+                status: typeof document.getElementById === 'function',
+                detail: '✅ 可用'
+            });
+
+            results.push({
+                test: 'querySelector可用',
+                status: typeof document.querySelector === 'function',
+                detail: '✅ 可用'
+            });
+
+            displayResults('函数存在性测试', results);
+        }
+
+        // 测试步骤跳转
+        function testStepNavigation() {
+            const results = [];
+
+            try {
+                // 测试元素查找
+                const step1 = document.getElementById('step1');
+                const step2 = document.getElementById('step2');
+
+                results.push({
+                    test: '找到步骤1元素',
+                    status: !!step1,
+                    detail: !!step1 ? '✅ 找到' : '❌ 未找到'
+                });
+
+                results.push({
+                    test: '找到步骤2元素',
+                    status: !!step2,
+                    detail: !!step2 ? '✅ 找到' : '❌ 未找到'
+                });
+
+                if (step1 && step2) {
+                    // 测试跳转到步骤2
+                    goToStep(2);
+                    results.push({
+                        test: '跳转到步骤2',
+                        status: step2.classList.contains('active'),
+                        detail: step2.classList.contains('active') ? '✅ 成功' : '❌ 失败'
+                    });
+
+                    setTimeout(() => {
+                        // 测试返回步骤1
+                        goToStep(1);
+                        results.push({
+                            test: '返回步骤1',
+                            status: step1.classList.contains('active'),
+                            detail: step1.classList.contains('active') ? '✅ 成功' : '❌ 失败'
+                        });
+                        displayResults('步骤跳转测试', results);
+                    }, 1000);
+                }
+
+            } catch (error) {
+                results.push({
+                    test: '跳转过程中出错',
+                    status: false,
+                    detail: '❌ 错误: ' + error.message
+                });
+                displayResults('步骤跳转测试', results);
+            }
+        }
+
+        // 测试词汇生成
+        function testVocabularyGeneration() {
+            const results = [];
+
+            try {
+                // 设置测试数据
+                userData = {
+                    theme: document.getElementById('testTheme').value,
+                    title: document.getElementById('testTitle').value,
+                    languages: ['chinese', 'english'],
+                    difficulty: 'level1'
+                };
+
+                results.push({
+                    test: '设置测试数据',
+                    status: true,
+                    detail: `主题: ${userData.theme}, 标题: ${userData.title}`
+                });
+
+                // 测试词汇生成
+                vocabulary = getVocabulary(userData.theme, userData.difficulty);
+                results.push({
+                    test: '词汇生成成功',
+                    status: Array.isArray(vocabulary) && vocabulary.length > 0,
+                    detail: `生成了 ${vocabulary.length} 个词汇`
+                });
+
+                // 测试标签生成
+                const tags = generateTagText(vocabulary, userData.languages);
+                results.push({
+                    test: '标签生成成功',
+                    status: Array.isArray(tags) && tags.length > 0,
+                    detail: `生成了 ${tags.length} 个标签`
+                });
+
+                // 测试跳转
+                goToStep(2);
+                results.push({
+                    test: '词汇生成后跳转成功',
+                    status: document.getElementById('step2').classList.contains('active'),
+                    detail: '✅ 成功跳转到步骤2'
+                });
+
+                // 显示词汇
+                const vocabularyHtml = vocabulary.slice(0, 5).map((item, index) =>
+                    `<div style="margin: 5px 0; padding: 8px; background: #f0f0f0; border-radius: 4px;">
+                        <strong>${index + 1}. ${item.chinese}</strong> - ${item.english}
+                    </div>`
+                ).join('');
+
+                document.getElementById('vocabularyList').innerHTML = vocabularyHtml;
+
+                displayResults('词汇生成测试', results);
+
+            } catch (error) {
+                results.push({
+                    test: '词汇生成过程中出错',
+                    status: false,
+                    detail: '❌ 错误: ' + error.message
+                });
+                displayResults('词汇生成测试', results);
+            }
+        }
+
+        // 显示测试结果
+        function displayResults(testName, results) {
+            document.getElementById('testResults').style.display = 'block';
+
+            const html = `
+                <div class="result-section">
+                    <h4>${testName}</h4>
+                    ${results.map(result => `
+                        <div style="margin: 10px 0; padding: 10px; background: ${result.status ? '#e8f5e8' : '#ffebee'}; border-radius: 4px;">
+                            <strong>${result.test}:</strong> ${result.detail}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            document.getElementById('resultsContainer').innerHTML = html;
+        }
+
+        // 跳转到指定步骤
+        function goToStep(step) {
+            console.log(`尝试跳转到步骤 ${step}`);
+
+            // 隐藏所有步骤
+            document.querySelectorAll('.step-content').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            // 显示当前步骤
+            const stepElement = document.getElementById(`step${step}`);
+            if (stepElement) {
+                stepElement.classList.add('active');
+                console.log(`成功显示步骤 ${step}`);
+            } else {
+                console.error(`未找到步骤 ${step} 的元素`);
+            }
+
+            // 更新步骤指示器
+            document.querySelectorAll('.step').forEach(el => {
+                el.classList.remove('active');
+                el.classList.remove('completed');
+            });
+
+            for (let i = 1; i <= step; i++) {
+                const stepIndicator = document.querySelector(`.step[data-step="${i}"]`);
+                if (stepIndicator) {
+                    if (i < step) {
+                        stepIndicator.classList.add('completed');
+                    } else if (i === step) {
+                        stepIndicator.classList.add('active');
+                    }
+                }
+            }
+        }
+
+        // 返回步骤1
+        function goBackToStep1() {
+            goToStep(1);
+        }
+    </script>
+</body>
+</html>

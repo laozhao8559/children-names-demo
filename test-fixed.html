@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>儿童识字小报生成器 - 修复版本</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🎨 儿童识字小报生成器 (修复版本)</h1>
+            <p>测试物品显示和语言标签修复</p>
+        </header>
+
+        <!-- 调试信息 -->
+        <div id="debugInfo" style="background: #e3f2fd; padding: 15px; margin: 15px 0; border-radius: 8px; border-left: 4px solid #2196F3;">
+            <h4>🔍 调试和测试信息:</h4>
+            <div id="debugContent">等待操作...</div>
+        </div>
+
+        <main class="main-content">
+            <!-- 快速测试表单 -->
+            <div class="step-content active">
+                <h2>⚡ 快速测试表单</h2>
+                <form id="quickTestForm">
+                    <div class="form-group">
+                        <label>选择主题:</label>
+                        <select id="theme" name="theme" required>
+                            <option value="">请选择...</option>
+                            <option value="超市">超市</option>
+                            <option value="医院">医院</option>
+                            <option value="公园">公园</option>
+                            <option value="学校">学校</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>标题:</label>
+                        <input type="text" id="title" name="title" value="测试小报" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>语言组合:</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="languages" value="chinese" checked>
+                                <span>中文</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="languages" value="english" checked>
+                                <span>英文</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="languages" value="pinyin">
+                                <span>拼音</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>难度等级:</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="difficulty" value="level1" checked>
+                                <span>Level 1 (5-6岁)</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="difficulty" value="level2">
+                                <span>Level 2 (6-8岁)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">生成测试数据</button>
+                </form>
+            </div>
+
+            <!-- 显示结果 -->
+            <div id="results" style="display: none;">
+                <h2>📊 生成结果</h2>
+
+                <div class="result-section">
+                    <h3>1. 生成的词汇表</h3>
+                    <div id="vocabularyResult"></div>
+                </div>
+
+                <div class="result-section">
+                    <h3>2. 语言标签组合</h3>
+                    <div id="tagsResult"></div>
+                </div>
+
+                <div class="result-section">
+                    <h3>3. 最终绘图Prompt</h3>
+                    <div id="promptResult" style="background: #f8f9fa; padding: 15px; border-radius: 8px; white-space: pre-wrap; font-family: monospace; font-size: 14px; max-height: 400px; overflow-y: auto;"></div>
+                </div>
+
+                <div class="result-section">
+                    <h3>4. 复制Prompt</h3>
+                    <button class="btn btn-primary" onclick="copyPrompt()">复制Prompt到剪贴板</button>
+                    <span id="copyStatus" style="margin-left: 10px; color: #4CAF50;"></span>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="vocabulary.js"></script>
+    <script>
+        let userData = {};
+        let vocabulary = [];
+        let tags = [];
+        let finalPrompt = '';
+
+        function log(message) {
+            const debugContent = document.getElementById('debugContent');
+            const timestamp = new Date().toLocaleTimeString();
+            debugContent.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            console.log(message);
+        }
+
+        function showResults() {
+            document.getElementById('results').style.display = 'block';
+        }
+
+        function displayVocabulary() {
+            const container = document.getElementById('vocabularyResult');
+            let html = `<table class="vocabulary-table" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th>序号</th>
+                        <th>中文</th>
+                        <th>拼音</th>
+                        <th>英文</th>
+                        <th>日文</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+            vocabulary.forEach((word, index) => {
+                html += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td><strong>${word.chinese}</strong></td>
+                        <td>${word.pinyin}</td>
+                        <td>${word.english}</td>
+                        <td>${word.japanese}</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        function displayTags() {
+            const container = document.getElementById('tagsResult');
+            let html = '<div class="tag-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px;">';
+
+            tags.forEach((tag, index) => {
+                html += `
+                    <div style="background: #e8f5e8; padding: 10px; border-radius: 6px; border-left: 3px solid #4CAF50;">
+                        <strong>${index + 1}.</strong> ${tag}
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+        }
+
+        function createImagePrompt() {
+            const environmentText = userData.environment ? `，${userData.environment}环境` : '';
+            const vocabularyItems = vocabulary.map(v => v.chinese).join('、');
+            const ageGroup = userData.difficulty === 'level1' ? '5-6岁' : userData.difficulty === 'level2' ? '6-8岁' : '8-9岁';
+            const sampleTagText = tags.slice(0, 3).join('，');
+
+            const prompt = `儿童识字教育海报，标题"《${userData.title}}"，${userData.theme}主题场景${environmentText}，适合${ageGroup}儿童学习识字。
+
+主要内容：在${userData.theme}场景中，必须清晰绘制以下物品：${vocabularyItems}。每个物品旁边都要有文字标签，标签格式如：${sampleTagText}。
+
+场景要求：
+- 场景包含：${getCharactersByTheme()}
+- 背景要有${userData.theme}的典型特征，但不要过于复杂
+- 整体布局要像儿童教育海报，清晰易读
+
+视觉风格：
+- A4竖版比例，儿童插画风格
+- 线条清晰，色彩鲜艳明亮
+- 简洁干净的背景，突出教学物品
+- 每个物品都要有足够的留白空间放置文字标签
+- 物品大小适中，便于儿童识别
+
+文字标签要求：
+- 标签要放在对应物品附近，用细线连接
+- 字体要大而清晰，适合儿童阅读
+- 标签不要重叠，分布均匀
+- 重点突出物品的中文名称
+
+技术要求：8K分辨率，高质量细节，专业儿童插画风格，教育用途友好，色彩饱和度适中。`;
+
+            return prompt;
+        }
+
+        function getCharactersByTheme() {
+            const characterMap = {
+                '超市': '收银员、购物的小朋友、店员、推购物车的家庭',
+                '医院': '医生、护士、小病人、陪伴的家长',
+                '公园': '玩耍的小朋友、散步的老人、锻炼的成年人',
+                '学校': '老师、学生、校长、值班老师'
+            };
+
+            return characterMap[userData.theme] || '小朋友、老师、家长';
+        }
+
+        function displayPrompt() {
+            document.getElementById('promptResult').textContent = finalPrompt;
+        }
+
+        function copyPrompt() {
+            navigator.clipboard.writeText(finalPrompt).then(() => {
+                document.getElementById('copyStatus').textContent = '✅ 已复制到剪贴板';
+                setTimeout(() => {
+                    document.getElementById('copyStatus').textContent = '';
+                }, 3000);
+            });
+        }
+
+        // 表单提交处理
+        document.getElementById('quickTestForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            log('开始生成测试数据...');
+
+            // 收集数据
+            const formData = new FormData(e.target);
+            userData = {
+                theme: formData.get('theme'),
+                title: formData.get('title'),
+                languages: formData.getAll('languages'),
+                difficulty: formData.get('difficulty'),
+                environment: '' // 简化测试，不使用环境
+            };
+
+            log('用户数据: ' + JSON.stringify(userData, null, 2));
+
+            // 生成词汇
+            vocabulary = getVocabulary(userData.theme, userData.difficulty);
+            log(`生成 ${vocabulary.length} 个词汇`);
+
+            // 生成标签
+            tags = generateTagText(vocabulary, userData.languages);
+            log(`生成 ${tags.length} 个标签`);
+
+            // 生成Prompt
+            finalPrompt = createImagePrompt();
+            log('生成最终Prompt');
+
+            // 显示结果
+            displayVocabulary();
+            displayTags();
+            displayPrompt();
+            showResults();
+
+            log('测试完成！请检查结果。');
+        });
+    </script>
+</body>
+</html>

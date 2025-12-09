@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>儿童识字小报生成器 - 调试版本</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🎨 儿童识字小报生成器 (调试版本)</h1>
+            <p>根据主题/场景自动生成儿童识字小报绘图Prompt</p>
+        </header>
+
+        <!-- 调试信息 -->
+        <div id="debugInfo" style="background: yellow; padding: 10px; margin: 10px 0; border-radius: 5px;">
+            <h4>调试信息:</h4>
+            <div id="debugContent">等待用户操作...</div>
+        </div>
+
+        <!-- 主要内容区 -->
+        <main class="main-content">
+            <!-- 步骤1: 5个问题 -->
+            <div id="step1" class="step-content active">
+                <h2>📋 请回答以下5个问题</h2>
+                <form id="questionsForm">
+                    <div class="form-group">
+                        <label for="theme">1. 本期儿童识字小报的主题/场景是什么？</label>
+                        <select id="theme" name="theme" required>
+                            <option value="">请选择主题...</option>
+                            <option value="超市">超市</option>
+                            <option value="公园">公园</option>
+                            <option value="医院">医院</option>
+                            <option value="学校">学校</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="title">2. 小报的大标题是什么？</label>
+                        <input type="text" id="title" name="title" placeholder="如：《走进超市》" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>3. 你希望标签显示哪些语言？（可任意组合）</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="languages" value="chinese" checked>
+                                <span>中文</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="languages" value="pinyin">
+                                <span>拼音</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="languages" value="english">
+                                <span>英文</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="difficulty">4. 你希望本期词汇难度等级是？</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="difficulty" value="level1" checked>
+                                <div class="radio-content">
+                                    <strong>Level 1：</strong>日常常见（适合 5–6 岁）
+                                </div>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="difficulty" value="level2">
+                                <div class="radio-content">
+                                    <strong>Level 2：</strong>场景完整词汇（适合 6–8 岁）
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="environment">5. 画面需要体现季节、天气或地理特征吗？</label>
+                        <select id="environment" name="environment">
+                            <option value="">无特别要求</option>
+                            <option value="春季">春季</option>
+                            <option value="晴天">晴天</option>
+                            <option value="森林">森林</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">下一步：生成词汇</button>
+                </form>
+            </div>
+
+            <!-- 步骤2: 显示生成的词汇 -->
+            <div id="step2" class="step-content">
+                <h2>📚 自动生成的词汇库</h2>
+                <div id="vocabularyList" class="vocabulary-list">
+                    <p>正在生成词汇...</p>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="previousStep()">上一步</button>
+                    <button class="btn btn-primary" onclick="testStep3()">测试：跳转到步骤3</button>
+                </div>
+            </div>
+
+            <!-- 步骤3: 测试步骤 -->
+            <div id="step3" class="step-content">
+                <h2>🏷️ 标签组合结果</h2>
+                <div id="tagList" class="tag-list">
+                    <p>这是步骤3的测试内容</p>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="previousStep()">上一步</button>
+                    <button class="btn btn-primary" onclick="goToStep(1)">返回步骤1</button>
+                </div>
+            </div>
+        </main>
+
+        <!-- 加载提示 -->
+        <div id="loadingOverlay" class="loading-overlay hidden">
+            <div class="loading-spinner"></div>
+            <p id="loadingText">处理中...</p>
+        </div>
+    </div>
+
+    <script>
+        // 简化的测试脚本
+        let currentStep = 1;
+        let userData = {};
+        let vocabulary = [];
+
+        function debugLog(message) {
+            const debugContent = document.getElementById('debugContent');
+            const timestamp = new Date().toLocaleTimeString();
+            debugContent.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            console.log(message);
+        }
+
+        function initializeApp() {
+            debugLog('初始化应用...');
+
+            // 检查元素是否存在
+            const form = document.getElementById('questionsForm');
+            if (form) {
+                debugLog('找到表单元素，绑定事件...');
+                form.addEventListener('submit', handleFormSubmit);
+            } else {
+                debugLog('错误：未找到表单元素！');
+            }
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            debugLog('表单提交事件触发！');
+
+            try {
+                // 收集用户数据
+                const formData = new FormData(e.target);
+                userData = {
+                    theme: formData.get('theme'),
+                    title: formData.get('title'),
+                    languages: formData.getAll('languages'),
+                    difficulty: formData.get('difficulty'),
+                    environment: formData.get('environment')
+                };
+
+                debugLog('收集到的数据: ' + JSON.stringify(userData, null, 2));
+
+                // 验证必填字段
+                if (!userData.theme || !userData.title || !userData.languages.length || !userData.difficulty) {
+                    debugLog('验证失败：缺少必填字段');
+                    alert('请填写所有必填字段！');
+                    return;
+                }
+
+                debugLog('验证通过，开始生成词汇...');
+                generateVocabulary();
+            } catch (error) {
+                debugLog('处理表单时出错: ' + error.message);
+                alert('处理表单时出错：' + error.message);
+            }
+        }
+
+        function generateVocabulary() {
+            debugLog('开始生成词汇...');
+            showLoading('正在生成词汇库...');
+
+            // 模拟词汇生成
+            setTimeout(() => {
+                try {
+                    // 简化的词汇数据用于测试
+                    vocabulary = [
+                        {chinese: '苹果', pinyin: 'píng guǒ', english: 'apple', japanese: 'りんご'},
+                        {chinese: '香蕉', pinyin: 'xiāng jiāo', english: 'banana', japanese: 'バナナ'},
+                        {chinese: '橙子', pinyin: 'chéng zi', english: 'orange', japanese: 'オレンジ'}
+                    ];
+
+                    debugLog('生成的测试词汇: ' + JSON.stringify(vocabulary, null, 2));
+                    displayVocabulary();
+                    hideLoading();
+
+                    debugLog('准备跳转到步骤2...');
+                    goToStep(2);
+                } catch (error) {
+                    debugLog('生成词汇时出错: ' + error.message);
+                    hideLoading();
+                    alert('生成词汇时出错：' + error.message);
+                }
+            }, 1000);
+        }
+
+        function displayVocabulary() {
+            debugLog('显示词汇...');
+            const container = document.getElementById('vocabularyList');
+
+            let html = '<div class="vocabulary-grid"><table class="vocabulary-table">';
+            html += '<thead><tr><th>序号</th><th>中文</th><th>拼音</th><th>英文</th><th>日文</th></tr></thead><tbody>';
+
+            vocabulary.forEach((word, index) => {
+                html += `<tr><td>${index + 1}</td><td>${word.chinese}</td><td>${word.pinyin}</td><td>${word.english}</td><td>${word.japanese}</td></tr>`;
+            });
+
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+            debugLog('词汇显示完成');
+        }
+
+        function goToStep(step) {
+            debugLog('跳转到步骤 ' + step);
+
+            // 隐藏所有步骤
+            document.querySelectorAll('.step-content').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            // 显示当前步骤
+            const stepElement = document.getElementById('step' + step);
+            if (stepElement) {
+                stepElement.classList.add('active');
+                debugLog('成功显示步骤 ' + step);
+                currentStep = step;
+            } else {
+                debugLog('错误：未找到步骤 ' + step + ' 的元素');
+            }
+        }
+
+        function previousStep() {
+            if (currentStep > 1) {
+                goToStep(currentStep - 1);
+            }
+        }
+
+        function testStep3() {
+            goToStep(3);
+        }
+
+        function showLoading(text = '处理中...') {
+            debugLog('显示加载提示: ' + text);
+            const overlay = document.getElementById('loadingOverlay');
+            const loadingText = document.getElementById('loadingText');
+            if (overlay && loadingText) {
+                loadingText.textContent = text;
+                overlay.classList.remove('hidden');
+            } else {
+                debugLog('错误：未找到加载提示元素');
+            }
+        }
+
+        function hideLoading() {
+            debugLog('隐藏加载提示');
+            const overlay = document.getElementById('loadingOverlay');
+            if (overlay) {
+                overlay.classList.add('hidden');
+            } else {
+                debugLog('错误：未找到加载提示元素');
+            }
+        }
+
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            debugLog('页面加载完成，开始初始化...');
+            initializeApp();
+        });
+
+        // 添加全局错误处理
+        window.addEventListener('error', function(e) {
+            debugLog('全局错误: ' + e.message + ' at ' + e.filename + ':' + e.lineno);
+        });
+    </script>
+</body>
+</html>

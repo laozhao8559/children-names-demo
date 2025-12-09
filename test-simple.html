@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简化测试版本</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🧪 简化测试版本</h1>
+            <p>测试基本的表单提交和页面跳转功能</p>
+        </header>
+
+        <main class="main-content">
+            <!-- 步骤1: 表单 -->
+            <div id="step1" class="step-content active">
+                <h2>📋 测试表单</h2>
+                <form id="testForm">
+                    <div class="form-group">
+                        <label for="theme">选择主题:</label>
+                        <select id="theme" name="theme" required>
+                            <option value="">请选择主题...</option>
+                            <option value="公交站">公交站</option>
+                            <option value="博物馆">博物馆</option>
+                            <option value="超市">超市</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="title">标题:</label>
+                        <input type="text" id="title" name="title" placeholder="输入标题..." required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>选择语言:</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="languages" value="chinese" checked>
+                                <span>中文</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="languages" value="english">
+                                <span>英文</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">提交并跳转</button>
+                </form>
+            </div>
+
+            <!-- 步骤2: 结果 -->
+            <div id="step2" class="step-content">
+                <h2>📚 结果显示</h2>
+                <div id="resultContainer">
+                    <p>等待结果...</p>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="goToStep(1)">返回步骤1</button>
+                </div>
+            </div>
+        </main>
+
+        <!-- 步骤指示器 -->
+        <div class="steps-indicator">
+            <div class="step active" data-step="1">
+                <span class="step-number">1</span>
+                <span class="step-title">表单</span>
+            </div>
+            <div class="step" data-step="2">
+                <span class="step-number">2</span>
+                <span class="step-title">结果</span>
+            </div>
+        </div>
+    </div>
+
+    <script src="vocabulary.js"></script>
+    <script>
+        // 全局变量
+        let userData = {};
+        let vocabulary = [];
+
+        // 页面加载完成
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('=== DOM加载完成 ===');
+            initializeApp();
+        });
+
+        function initializeApp() {
+            console.log('=== 初始化应用 ===');
+
+            const form = document.getElementById('testForm');
+            if (form) {
+                console.log('找到表单，绑定提交事件');
+                form.addEventListener('submit', handleFormSubmit);
+            } else {
+                console.error('未找到表单元素！');
+            }
+        }
+
+        // 处理表单提交
+        function handleFormSubmit(e) {
+            console.log('=== 表单提交开始 ===');
+            e.preventDefault();
+
+            // 收集表单数据
+            const formData = new FormData(e.target);
+            userData = {
+                theme: formData.get('theme'),
+                title: formData.get('title'),
+                languages: formData.getAll('languages'),
+                difficulty: 'level1'
+            };
+
+            console.log('收集到的数据:', userData);
+
+            // 验证数据
+            if (!userData.theme || !userData.title || !userData.languages.length) {
+                alert('请填写所有必填字段！');
+                return;
+            }
+
+            console.log('验证通过，开始处理...');
+
+            // 生成词汇
+            try {
+                vocabulary = getVocabulary(userData.theme, userData.difficulty);
+                console.log('生成词汇成功:', vocabulary.length);
+
+                // 显示结果
+                displayResults();
+
+                // 跳转到步骤2
+                console.log('准备跳转到步骤2...');
+                goToStep(2);
+                console.log('跳转完成');
+
+            } catch (error) {
+                console.error('处理出错:', error);
+                alert('处理出错: ' + error.message);
+            }
+        }
+
+        // 显示结果
+        function displayResults() {
+            const container = document.getElementById('resultContainer');
+
+            let html = `
+                <div class="result-section">
+                    <h3>提交的信息</h3>
+                    <p><strong>主题:</strong> ${userData.theme}</p>
+                    <p><strong>标题:</strong> ${userData.title}</p>
+                    <p><strong>语言:</strong> ${userData.languages.join(', ')}</p>
+                </div>
+
+                <div class="result-section">
+                    <h3>生成的词汇 (${vocabulary.length}个)</h3>
+                    <div class="vocabulary-grid">
+            `;
+
+            vocabulary.slice(0, 8).forEach((item, index) => {
+                html += `
+                    <div class="vocabulary-item">
+                        <strong>${index + 1}. ${item.chinese}</strong><br>
+                        <small>${item.english}</small>
+                    </div>
+                `;
+            });
+
+            html += `
+                    </div>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // 跳转到指定步骤
+        function goToStep(step) {
+            console.log(`跳转到步骤 ${step}`);
+
+            // 隐藏所有步骤
+            document.querySelectorAll('.step-content').forEach(el => {
+                el.classList.remove('active');
+            });
+
+            // 显示目标步骤
+            const targetStep = document.getElementById(`step${step}`);
+            if (targetStep) {
+                targetStep.classList.add('active');
+                console.log(`成功显示步骤 ${step}`);
+            } else {
+                console.error(`未找到步骤 ${step}`);
+            }
+
+            // 更新步骤指示器
+            document.querySelectorAll('.step').forEach(el => {
+                el.classList.remove('active', 'completed');
+            });
+
+            for (let i = 1; i <= step; i++) {
+                const indicator = document.querySelector(`.step[data-step="${i}"]`);
+                if (indicator) {
+                    if (i < step) {
+                        indicator.classList.add('completed');
+                    } else {
+                        indicator.classList.add('active');
+                    }
+                }
+            }
+        }
+
+        console.log('脚本加载完成');
+    </script>
+</body>
+</html>

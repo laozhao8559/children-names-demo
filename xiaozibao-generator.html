@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>儿童识字小报生成器</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🎨 儿童识字小报生成器</h1>
+            <p>根据主题/场景自动生成儿童识字小报绘图Prompt</p>
+            <div class="header-buttons">
+                <button class="btn btn-secondary" onclick="showHistory()">📚 历史记录</button>
+                <button class="btn btn-info" onclick="clearAllHistory()">🗑️ 清空历史</button>
+            </div>
+        </header>
+
+        <!-- 步骤指示器 -->
+        <div class="steps-indicator">
+            <div class="step active" data-step="1">
+                <span class="step-number">1</span>
+                <span class="step-title">收集信息</span>
+            </div>
+            <div class="step" data-step="2">
+                <span class="step-number">2</span>
+                <span class="step-title">生成词汇</span>
+            </div>
+            <div class="step" data-step="3">
+                <span class="step-number">3</span>
+                <span class="step-title">创建标签</span>
+            </div>
+            <div class="step" data-step="4">
+                <span class="step-number">4</span>
+                <span class="step-title">生成Prompt</span>
+            </div>
+            <div class="step" data-step="5">
+                <span class="step-number">5</span>
+                <span class="step-title">完成</span>
+            </div>
+        </div>
+
+        <!-- 主要内容区 -->
+        <main class="main-content">
+            <!-- 步骤1: 5个问题 -->
+            <div id="step1" class="step-content active">
+                <h2>📋 请回答以下5个问题</h2>
+                <form id="questionsForm">
+                    <div class="form-group">
+                        <label for="theme">1. 本期儿童识字小报的主题/场景是什么？</label>
+                        <div style="margin-bottom: 10px;">
+                            <select id="theme" name="theme" required onchange="handleThemeChange()">
+                                <option value="">请选择主题...</option>
+                                <optgroup label="日常生活场景">
+                                    <option value="超市">超市</option>
+                                    <option value="家里">家里</option>
+                                    <option value="学校">学校</option>
+                                    <option value="医院">医院</option>
+                                </optgroup>
+                                <optgroup label="户外活动场景">
+                                    <option value="公园">公园</option>
+                                    <option value="游乐场">游乐场</option>
+                                    <option value="动物园">动物园</option>
+                                </optgroup>
+                                <optgroup label="交通场景">
+                                    <option value="公交站">公交站</option>
+                                    <option value="火车站">火车站</option>
+                                    <option value="飞机场">飞机场</option>
+                                </optgroup>
+                                <optgroup label="文化教育场景">
+                                    <option value="图书馆">图书馆</option>
+                                    <option value="博物馆">博物馆</option>
+                                    <option value="书店">书店</option>
+                                </optgroup>
+                                <optgroup label="其他场景">
+                                    <option value="custom">自定义输入</option>
+                                </optgroup>
+                            </select>
+                        </div>
+
+                        <!-- 自定义输入框 -->
+                        <div id="customThemeDiv" style="display: none;">
+                            <input type="text" id="customTheme" name="customTheme"
+                                   placeholder="请输入您的自定义场景..."
+                                   style="width: 100%; padding: 12px 15px; border: 2px solid #4CAF50; border-radius: 8px; font-size: 16px;">
+                            <small>例如：菜市场、面包店、花店、邮局、银行等</small>
+                        </div>
+
+                        <small>支持10+个场景，或自定义输入任何您想要的场景</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="title">2. 小报的大标题是什么？</label>
+                        <input type="text" id="title" name="title" placeholder="如：《走进超市》《快乐医院》《森林大冒险》" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label>3. 你希望标签显示哪些语言？（可任意组合）</label>
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="languages" value="chinese" checked>
+                                <span>中文</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="languages" value="pinyin">
+                                <span>拼音</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="languages" value="english">
+                                <span>英文</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="languages" value="japanese">
+                                <span>日文</span>
+                            </label>
+                        </div>
+                        <small>支持任意组合：中文、中文+拼音、中文+英文、全选等</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="difficulty">4. 你希望本期词汇难度等级是？</label>
+                        <div class="radio-group">
+                            <label class="radio-label">
+                                <input type="radio" name="difficulty" value="level1" checked>
+                                <div class="radio-content">
+                                    <strong>Level 1：</strong>日常常见（适合 5–6 岁）
+                                </div>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="difficulty" value="level2">
+                                <div class="radio-content">
+                                    <strong>Level 2：</strong>场景完整词汇（适合 6–8 岁）
+                                </div>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="difficulty" value="level3">
+                                <div class="radio-content">
+                                    <strong>Level 3：</strong>细节丰富、难度较高（适合 8–9 岁）
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="environment">5. 画面需要体现季节、天气或地理特征吗？</label>
+                        <select id="environment" name="environment">
+                            <option value="">无特别要求</option>
+                            <optgroup label="季节">
+                                <option value="春季">春季</option>
+                                <option value="夏季">夏季</option>
+                                <option value="秋季">秋季</option>
+                                <option value="冬季">冬季</option>
+                            </optgroup>
+                            <optgroup label="天气">
+                                <option value="晴天">晴天</option>
+                                <option value="雨天">雨天</option>
+                                <option value="阴天">阴天</option>
+                                <option value="雪天">雪天</option>
+                                <option value="雾天">雾天</option>
+                            </optgroup>
+                            <optgroup label="地理">
+                                <option value="森林">森林</option>
+                                <option value="城市">城市</option>
+                                <option value="乡村">乡村</option>
+                                <option value="山地">山地</option>
+                                <option value="海边">海边</option>
+                            </optgroup>
+                        </select>
+                        <input type="text" id="customEnvironment" placeholder="或输入自定义描述" style="margin-top: 10px;">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">下一步：生成词汇</button>
+                </form>
+            </div>
+
+            <!-- 步骤2: 显示生成的词汇 -->
+            <div id="step2" class="step-content">
+                <h2>📚 自动生成的词汇库</h2>
+                <div id="vocabularyList" class="vocabulary-list">
+                    <p>正在生成词汇...</p>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="previousStep()">上一步</button>
+                    <button class="btn btn-primary" onclick="nextStep()">下一步：生成标签</button>
+                </div>
+            </div>
+
+            <!-- 步骤3: 显示标签组合 -->
+            <div id="step3" class="step-content">
+                <h2>🏷️ 标签组合结果</h2>
+                <div id="tagList" class="tag-list">
+                    <p>正在生成标签...</p>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="previousStep()">上一步</button>
+                    <button class="btn btn-primary" onclick="nextStep()">下一步：生成Prompt</button>
+                </div>
+            </div>
+
+            <!-- 步骤4: 生成Prompt -->
+            <div id="step4" class="step-content">
+                <h2>🎯 绘图Prompt生成</h2>
+                <div id="promptResult" class="prompt-result">
+                    <p>正在生成绘图Prompt...</p>
+                </div>
+                <div class="api-section">
+                    <h3>API配置</h3>
+                    <div class="form-group">
+                        <label for="apiKey">API Key:</label>
+                        <input type="password" id="apiKey" placeholder="请输入您的Nano Banana Pro API Key">
+                        <small>获取API Key: <a href="https://kie.ai/api-key" target="_blank">https://kie.ai/api-key</a></small>
+                    </div>
+                    <button class="btn btn-success" onclick="generateImage()">生成图像</button>
+                </div>
+                <div class="button-group">
+                    <button class="btn btn-secondary" onclick="previousStep()">上一步</button>
+                </div>
+            </div>
+
+            <!-- 步骤5: 完成 -->
+            <div id="step5" class="step-content">
+                <h2>🎉 生成完成！</h2>
+                <div id="finalResult" class="final-result">
+                    <div class="result-section">
+                        <h3>📸 生成的图像</h3>
+                        <div id="generatedImage" class="image-container">
+                            <p>图像生成中...</p>
+                        </div>
+                    </div>
+
+                    <div class="result-section">
+                        <h3>📝 词汇总表</h3>
+                        <div id="vocabularyTable" class="vocabulary-table"></div>
+                    </div>
+
+                    <div class="result-section">
+                        <h3>💾 下载</h3>
+                        <div class="download-buttons">
+                            <button class="btn btn-primary" onclick="downloadImage()">下载图像</button>
+                            <button class="btn btn-secondary" onclick="copyPrompt()">复制Prompt</button>
+                            <button class="btn btn-info" onclick="exportData()">导出数据</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn btn-primary" onclick="restart()">重新开始</button>
+                </div>
+            </div>
+        </main>
+
+        <!-- 加载提示 -->
+        <div id="loadingOverlay" class="loading-overlay hidden">
+            <div class="loading-spinner"></div>
+            <p id="loadingText">处理中...</p>
+        </div>
+
+        <!-- 历史记录弹窗 -->
+        <div id="historyModal" class="modal hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>📚 生成历史记录</h2>
+                    <button class="close-btn" onclick="closeHistory()">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div id="historyList" class="history-list">
+                        <p class="no-history">暂无历史记录</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="closeHistory()">关闭</button>
+                    <button class="btn btn-primary" onclick="exportHistory()">导出历史</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="vocabulary.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

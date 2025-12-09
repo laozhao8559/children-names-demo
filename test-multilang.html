@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多语言标签测试</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🌏 多语言标签生成测试</h1>
+            <p>测试每种语言组合的标签生成效果</p>
+        </header>
+
+        <main class="main-content">
+            <div class="step-content active">
+                <h2>🎯 语言组合测试</h2>
+
+                <form id="testForm">
+                    <div class="form-group">
+                        <label>选择主题:</label>
+                        <select id="theme" name="theme" required>
+                            <option value="超市">超市</option>
+                            <option value="医院">医院</option>
+                            <option value="公园">公园</option>
+                            <option value="学校">学校</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label><strong>选择语言组合:</strong></label>
+                        <div style="margin: 15px 0;">
+                            <button type="button" class="btn btn-secondary" onclick="selectLanguages(['chinese'])">仅中文</button>
+                            <button type="button" class="btn btn-secondary" onclick="selectLanguages(['chinese', 'english'])">中文+英文</button>
+                            <button type="button" class="btn btn-secondary" onclick="selectLanguages(['chinese', 'pinyin'])">中文+拼音</button>
+                            <button type="button" class="btn btn-secondary" onclick="selectLanguages(['chinese', 'pinyin', 'english'])">中文+拼音+英文</button>
+                            <button type="button" class="btn btn-secondary" onclick="selectLanguages(['chinese', 'pinyin', 'english', 'japanese'])">全选</button>
+                        </div>
+
+                        <div class="checkbox-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="languages" value="chinese" checked>
+                                <span>中文</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="languages" value="pinyin">
+                                <span>拼音</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="languages" value="english">
+                                <span>英文</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" name="languages" value="japanese">
+                                <span>日文</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">生成测试标签</button>
+                </form>
+
+                <!-- 测试结果 -->
+                <div id="testResults" style="margin-top: 30px; display: none;">
+                    <h3>📋 测试结果</h3>
+
+                    <div class="result-section">
+                        <h4>当前选择的语言组合:</h4>
+                        <div id="selectedLanguages" style="font-size: 1.2em; font-weight: bold; color: #2196F3;"></div>
+                    </div>
+
+                    <div class="result-section">
+                        <h4>生成的标签示例 (前5个):</h4>
+                        <div id="tagExamples" style="background: #f8f9fa; padding: 15px; border-radius: 8px;"></div>
+                    </div>
+
+                    <div class="result-section">
+                        <h4>详细标签列表:</h4>
+                        <div id="fullTagList"></div>
+                    </div>
+
+                    <div class="result-section">
+                        <h4>最终Prompt测试:</h4>
+                        <div style="background: #fff3e0; padding: 15px; border-radius: 8px; border-left: 4px solid #ff9800;">
+                            <strong>预期标签格式:</strong>
+                            <div id="expectedFormat"></div>
+                        </div>
+
+                        <button class="btn btn-primary" onclick="copyTestPrompt()" style="margin-top: 10px;">复制测试Prompt</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="vocabulary.js"></script>
+    <script>
+        let userData = {};
+        let vocabulary = [];
+        let tags = [];
+
+        function selectLanguages(languageArray) {
+            // 清除所有选择
+            document.querySelectorAll('input[name="languages"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+
+            // 选择指定语言
+            languageArray.forEach(lang => {
+                const checkbox = document.querySelector(`input[name="languages"][value="${lang}"]`);
+                if (checkbox) checkbox.checked = true;
+            });
+        }
+
+        function showExpectedFormat(languages) {
+            const formatMap = {
+                'chinese': '中文',
+                'chinese,english': '中文 (english)',
+                'chinese,pinyin': '中文 [pīnyīn]',
+                'chinese,pinyin,english': '中文 [pīnyīn] (english)',
+                'chinese,pinyin,english,japanese': '中文 [pīnyīn] (english) {japanese}'
+            };
+
+            const key = languages.join(',');
+            return formatMap[key] || languages.join(' + ');
+        }
+
+        document.getElementById('testForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            // 收集数据
+            const formData = new FormData(e.target);
+            userData = {
+                theme: formData.get('theme'),
+                languages: formData.getAll('languages'),
+                title: '多语言测试'
+            };
+
+            if (userData.languages.length === 0) {
+                alert('请至少选择一种语言！');
+                return;
+            }
+
+            // 生成词汇
+            vocabulary = getVocabulary(userData.theme, 'level1').slice(0, 5); // 只取5个用于测试
+            console.log('测试词汇:', vocabulary);
+
+            // 生成标签
+            tags = generateTagText(vocabulary, userData.languages);
+            console.log('生成的标签:', tags);
+
+            // 显示结果
+            showResults();
+        });
+
+        function showResults() {
+            document.getElementById('testResults').style.display = 'block';
+
+            // 显示选择的语言
+            const languageNames = {
+                'chinese': '中文',
+                'pinyin': '拼音',
+                'english': '英文',
+                'japanese': '日文'
+            };
+
+            const selectedLangNames = userData.languages.map(lang => languageNames[lang]).join(' + ');
+            document.getElementById('selectedLanguages').textContent = selectedLangNames;
+
+            // 显示标签示例
+            const examplesHtml = tags.slice(0, 5).map((tag, index) => {
+                return `<div style="margin: 5px 0; padding: 8px; background: white; border-radius: 4px; border-left: 3px solid #4CAF50;">
+                    <strong>${vocabulary[index].chinese}:</strong> ${tag}
+                </div>`;
+            }).join('');
+
+            document.getElementById('tagExamples').innerHTML = examplesHtml;
+
+            // 显示完整标签列表
+            const fullListHtml = `
+                <table class="vocabulary-table" style="width: 100%;">
+                    <thead>
+                        <tr>
+                            <th>物品</th>
+                            <th>生成的标签</th>
+                            <th>检查</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${vocabulary.map((item, index) => {
+                            const hasAllLanguages = checkTagCompleteness(tags[index], userData.languages);
+                            return `
+                                <tr>
+                                    <td><strong>${item.chinese}</strong></td>
+                                    <td>${tags[index]}</td>
+                                    <td style="color: ${hasAllLanguages ? '#4CAF50' : '#f44336'}">
+                                        ${hasAllLanguages ? '✅ 完整' : '❌ 缺失'}
+                                    </td>
+                                </tr>
+                            `;
+                        }).join('')}
+                    </tbody>
+                </table>
+            `;
+
+            document.getElementById('fullTagList').innerHTML = fullListHtml;
+
+            // 显示预期格式
+            document.getElementById('expectedFormat').innerHTML = `
+                <div style="font-size: 1.1em; margin: 10px 0;">
+                    期望格式: <strong>${showExpectedFormat(userData.languages)}</strong>
+                </div>
+                <div style="font-size: 0.9em; color: #666;">
+                    每个标签都应该包含所有选择的语言部分
+                </div>
+            `;
+        }
+
+        function checkTagCompleteness(tag, languages) {
+            // 检查标签是否包含所有选择的语言
+            let hasAll = true;
+
+            if (languages.includes('chinese') && !tag.match(/[\u4e00-\u9fa5]+/)) hasAll = false;
+            if (languages.includes('pinyin') && !tag.match(/\[[a-zA-Z\s]+\]/)) hasAll = false;
+            if (languages.includes('english') && !tag.match(/\([a-zA-Z\s]+\)/)) hasAll = false;
+            if (languages.includes('japanese') && !tag.match(/\{[\u3040-\u309f\u30a0-\u30ff\s]+\}/)) hasAll = false;
+
+            return hasAll;
+        }
+
+        function copyTestPrompt() {
+            const prompt = `多语言标签测试
+主题: ${userData.theme}
+语言组合: ${userData.languages.join(' + ')}
+词汇: ${vocabulary.map(v => v.chinese).join('、')}
+标签示例: ${tags.slice(0, 3).join('，')}
+
+请确保每个物品的标签都包含所有选择的语言，格式如下：
+${tags.map((tag, index) => `${vocabulary[index].chinese}: ${tag}`).join('\n')}`;
+
+            navigator.clipboard.writeText(prompt).then(() => {
+                alert('测试Prompt已复制到剪贴板！');
+            });
+        }
+    </script>
+</body>
+</html>
